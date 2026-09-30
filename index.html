@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Last Ritual</title>
+<style>
+:root{
+  --bg:#050505;
+  --panel:#0d0d0d;
+  --line:#292929;
+  --red:#9e2020;
+  --red2:#d13a3a;
+  --text:#ededed;
+  --muted:#999;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at 50% 0%,#350909 0%,#100303 24%,#050505 65%);
+}
+body:after{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;opacity:.055;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px);
+}
+button,input{font:inherit}
+button{touch-action:manipulation}
+#app{position:relative;z-index:1;max-width:900px;margin:auto;padding:32px 18px 70px}
+.logo{text-align:center;color:#777;font-size:11px;letter-spacing:6px}
+.hero{text-align:center;padding:65px 0 15px}
+.hero h1,.panel h2,.chapter,.riddle{font-family:Georgia,"Times New Roman",serif}
+.hero h1{
+  margin:0;font-size:clamp(46px,11vw,92px);letter-spacing:5px;
+  text-shadow:0 0 30px #8f1515;
+}
+.subtitle{margin-top:10px;color:#888;font-size:11px;letter-spacing:5px}
+.panel{
+  max-width:760px;margin:35px auto 0;padding:32px;
+  border:1px solid var(--line);background:rgba(8,8,8,.95);
+  box-shadow:0 0 70px rgba(120,0,0,.14);
+}
+.chapter{font-size:11px;letter-spacing:4px;color:var(--red2)}
+.panel h2{font-size:34px;margin:12px 0 24px}
+p{line-height:1.7;color:#c8c8c8}
+.riddle{
+  text-align:center;font-size:20px;line-height:1.8;
+  padding:25px 10px;margin:25px 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.action{
+  width:100%;padding:16px;margin-top:12px;
+  border:1px solid #8c1c1c;background:#250707;color:#fff;
+  letter-spacing:3px;font-weight:bold;cursor:pointer;
+}
+.action:hover{background:#430b0b}
+.text-input{
+  width:100%;padding:15px;background:#050505;color:#fff;
+  border:1px solid #444;outline:none;
+}
+.text-input:focus{border-color:var(--red2)}
+.message{text-align:center;min-height:24px;margin:14px 0;color:#999}
+.message.ok{color:#d34a4a}
+.message.bad{color:#777}
+.hint{display:none;background:#080808;border-color:#333;color:#777;font-size:10px}
+.progress{display:flex;gap:5px;margin-top:28px}
+.dot{height:3px;flex:1;background:#222}
+.dot.active{background:var(--red2);box-shadow:0 0 8px var(--red)}
+.small{text-align:center;color:#555;font-size:10px;letter-spacing:2px}
+
+/* SUWAKI */
+.sliders{display:flex;gap:25px;justify-content:center;margin:35px 0}
+.sliderBox{flex:1;text-align:center}
+.sliderValue{font-family:Georgia,serif;font-size:32px;color:var(--red2)}
+.sliderBox input{width:100%;accent-color:var(--red2)}
+
+/* PUZZLE */
+.puzzle{
+  width:min(390px,100%);aspect-ratio:1;margin:30px auto;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
+  background:#111;padding:3px;
+}
+.piece{
+  aspect-ratio:1;border:1px solid #333;
+  background-repeat:no-repeat;background-size:300% 300%;
+  cursor:pointer;touch-action:manipulation;
+}
+.piece.selected{outline:3px solid var(--red2);transform:scale(.94)}
+
+/* MIKSTURY */
+.potions{
+  display:flex;justify-content:center;align-items:flex-end;
+  gap:14px;flex-wrap:wrap;margin:35px auto 18px;
+}
+.potion{
+  width:72px;height:190px;position:relative;cursor:pointer;
+  touch-action:manipulation;transition:.15s;
+}
+.potion:hover{transform:translateY(-5px)}
+.potion.selected{transform:translateY(-12px);filter:drop-shadow(0 0 12px #a52222)}
+.bottle{
+  position:absolute;left:8px;right:8px;bottom:0;height:145px;
+  border:2px solid #555;border-top:0;border-radius:10px 10px 18px 18px;
+  background:linear-gradient(90deg,#ffffff10,#0000 25%,#ffffff08 70%,#0008);
+}
+.neck{
+  position:absolute;left:23px;top:0;width:26px;height:42px;
+  border:2px solid #555;border-bottom:0;border-radius:7px 7px 0 0;
+  background:#080808;
+}
+.cap{
+  position:absolute;left:20px;top:-5px;width:32px;height:9px;
+  background:#1b1b1b;border:1px solid #555;border-radius:3px;
+}
+.liquid{
+  position:absolute;left:10px;right:10px;bottom:2px;
+  border-radius:0 0 15px 15px;
+  background:linear-gradient(#9e2020,#320509);
+  box-shadow:0 -5px 14px #8b181833;
+}
+.label{
+  position:absolute;left:16px;right:16px;top:78px;height:35px;
+  border:1px solid #522020;background:#111;
+  text-align:center;padding-top:9px;color:#aaa;font-size:10px;
+}
+.order{display:flex;justify-content:center;gap:7px;min-height:25px;flex-wrap:wrap}
+.order span{padding:6px 9px;border:1px solid #333;color:#aaa;background:#0a0a0a}
+
+/* FINAL */
+.final{text-align:center}
+.reward{margin:35px 0;padding:30px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.reward-title{color:var(--red2);letter-spacing:4px;font-size:11px}
+.reward-code{font-family:Georgia,serif;font-size:34px;letter-spacing:7px;margin-top:15px}
+
+@media(max-width:600px){
+  #app{padding:22px 12px 50px}
+  .panel{padding:23px 18px}
+  .panel h2{font-size:28px}
+  .sliders{gap:10px}
+  .potion{width:60px;height:175px}
+}
+
+.target-wrap{display:flex;justify-content:center;margin:30px auto 18px}
+.target{position:relative;width:min(330px,82vw);aspect-ratio:1;border-radius:50%;border:3px solid #4b4b4b;background:radial-gradient(circle,#a52222 0 10%,#151515 10% 24%,#777 24% 25%,#090909 25% 43%,#777 43% 44%,#111 44% 64%,#777 64% 65%,#070707 65% 100%);box-shadow:0 0 35px #000,inset 0 0 35px #000;overflow:hidden;cursor:crosshair;touch-action:none}
+.target:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:#ffffff22;transform:translateX(-50%)}
+.target:after{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:#ffffff22;transform:translateY(-50%)}
+.throw-knife{position:absolute;width:8px;height:42px;background:#bdbdbd;border-radius:2px 2px 1px 1px;transform-origin:50% 90%;transform:translate(-50%,-90%) rotate(45deg);box-shadow:0 0 7px #fff8;pointer-events:none;z-index:4}
+.throw-knife:after{content:"";position:absolute;left:1px;bottom:-13px;width:6px;height:14px;background:#321313;border-radius:0 0 2px 2px}
+.target-score{text-align:center;font-family:Georgia,serif;font-size:20px;color:#aaa}
+.target-score strong{color:#d13a3a;font-size:30px}
+.throw-info{text-align:center;color:#666;font-size:11px;letter-spacing:2px;margin-top:8px}
+
+.hidden-scene{position:relative;width:min(620px,100%);aspect-ratio:16/10;margin:28px auto;border:1px solid #252525;overflow:hidden;cursor:crosshair;background:radial-gradient(circle at 76% 28%,#282828 0 3%,transparent 4%),radial-gradient(circle at 18% 78%,#191919 0 10%,transparent 11%),linear-gradient(135deg,#161616,#050505 52%,#0d0d0d);box-shadow:inset 0 0 80px #000,0 0 35px #000}
+.hidden-scene:before{content:"";position:absolute;left:8%;bottom:-8%;width:45%;height:75%;background:linear-gradient(120deg,#090909,#252525 48%,#070707);transform:skewY(-8deg);opacity:.8}
+.hidden-scene:after{content:"";position:absolute;right:8%;top:8%;width:25%;height:70%;background:linear-gradient(90deg,#090909,#1c1c1c,#070707);opacity:.65;box-shadow:-25px 20px 50px #000}
+.hidden-symbol{position:absolute;left:73%;top:25%;width:48px;height:48px;transform:translate(-50%,-50%) rotate(18deg);opacity:.12;filter:blur(1.5px)}
+.hidden-symbol:before,.hidden-symbol:after{content:"";position:absolute;left:50%;top:50%;width:42px;height:10px;border:2px solid #a52222;transform:translate(-50%,-50%) rotate(45deg)}
+.hidden-symbol:after{transform:translate(-50%,-50%) rotate(-45deg)}
+.hidden-symbol .circle{position:absolute;left:50%;top:50%;width:20px;height:20px;transform:translate(-50%,-50%);border:2px solid #a52222;border-radius:50%}
+.hidden-found{animation:found .7s ease forwards}
+@keyframes found{0%{opacity:.12;filter:blur(1.5px)}50%{opacity:1;filter:blur(0);transform:translate(-50%,-50%) rotate(18deg) scale(1.3)}100%{opacity:1;filter:drop-shadow(0 0 18px #b52a2a);transform:translate(-50%,-50%) rotate(18deg) scale(1)}}
+.search-marker{position:absolute;width:28px;height:28px;border:2px solid #b52a2a;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 0 18px #a52222}
+
+
+.sort-room{
+  position:relative;
+  width:min(760px,100%);
+  margin:25px auto 10px;
+  padding:18px 10px 22px;
+  min-height:0;
+  overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,#151515,#060606 72%);
+  border:1px solid #242424;
+  box-shadow:inset 0 0 55px #000,0 0 25px #000;
+}
+.sort-room:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 0%,#3b10101a,transparent 55%);}
+.sort-scene{
+  position:relative;
+  z-index:2;
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  gap:16px;
+  flex-wrap:wrap;
+  max-width:650px;
+  margin:0 auto 18px;
+  padding:22px 12px 10px;
+  background:rgba(3,3,3,.48);
+  border:1px solid rgba(190,160,120,.13);
+  box-shadow:0 0 35px #000;
+  backdrop-filter:blur(1px);
+}
+.sort-bottle{
+  position:relative;
+  width:66px;
+  height:198px;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:.18s;
+  border:1px solid #706b63;
+  border-top:0;
+  border-radius:9px 9px 18px 18px;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.13),transparent 18%,transparent 72%,rgba(0,0,0,.42)),
+    linear-gradient(#161616aa,#080808cc);
+  box-shadow:
+    inset 4px 0 5px rgba(255,255,255,.05),
+    inset -7px 0 12px rgba(0,0,0,.75),
+    0 8px 16px #000;
+  overflow:visible;
+}
+.sort-bottle:before{
+  content:"";
+  position:absolute;
+  left:17px;
+  top:-25px;
+  width:30px;
+  height:28px;
+  border:1px solid #706b63;
+  border-bottom:0;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(90deg,#292724,#090909);
+  box-shadow:inset 3px 0 4px #ffffff0b;
+}
+.sort-bottle:after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  top:5px;
+  height:13px;
+  border:1px solid #ffffff18;
+  border-radius:50%;
+  pointer-events:none;
+}
+.sort-bottle.selected{
+  transform:translateY(-12px) scale(1.03);
+  border-color:#b73535;
+  box-shadow:0 0 22px #8d1b1b, inset 0 0 18px #000;
+}
+.sort-liquid{
+  position:absolute;
+  left:3px;
+  right:3px;
+  height:24%;
+  border-radius:2px 2px 4px 4px;
+  box-shadow:
+    inset 0 5px 9px #ffffff14,
+    inset 0 -5px 8px #0008,
+    0 -2px 7px #0008;
+}
+.sort-liquid:after{
+  content:"";
+  position:absolute;
+  left:7px;
+  top:5px;
+  width:3px;
+  height:65%;
+  border-radius:50%;
+  background:#ffffff22;
+}
+.sort-empty{opacity:.72;border-style:dashed}
+
+.sort-scene{
+  display:flex;justify-content:center;gap:14px;flex-wrap:wrap;
+  margin:30px auto 18px;max-width:650px;
+}
+.sort-bottle{
+  position:relative;width:66px;height:205px;cursor:pointer;
+  touch-action:manipulation;transition:.18s;
+  border:2px solid #4b4b4b;border-top:0;border-radius:7px 7px 14px 14px;
+  background:linear-gradient(90deg,#ffffff08,#0000 28%,#ffffff09 68%,#0009);
+  box-shadow:inset 0 0 18px #000,0 8px 18px #000;
+}
+.sort-bottle:before{
+  content:"";position:absolute;left:19px;top:-19px;width:24px;height:22px;
+  border:2px solid #4b4b4b;border-bottom:0;border-radius:5px 5px 0 0;
+  background:#090909;
+}
+.sort-bottle.selected{
+  transform:translateY(-12px);
+  border-color:#b12b2b;
+  box-shadow:0 0 20px #8d1b1b, inset 0 0 18px #000;
+}
+.sort-liquid{
+  position:absolute;left:3px;right:3px;height:24%;
+  border-radius:2px;box-shadow:inset 0 5px 8px #ffffff18,0 -2px 8px #0008;
+}
+.sort-empty{
+  opacity:.65;
+  border-style:dashed;
+}
+.sort-instruction{
+  text-align:center;color:#777;font-size:11px;letter-spacing:2px;
+  margin-top:8px;
+}
+.sort-colors{
+  text-align:center;font-size:10px;color:#555;letter-spacing:1px;margin-top:10px;
+}
+
+.voucher-final{margin:32px auto 26px;padding:12px;max-width:760px;background:#090707;border:1px solid #4a2525;box-shadow:0 0 45px rgba(120,0,0,.25),inset 0 0 25px #000}.voucher-final img{display:block;width:100%;height:auto;border:1px solid #241313}.voucher-caption{margin-top:18px;color:#777;font-size:10px;letter-spacing:3px;text-align:center}
+</style>
+</head>
+
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+const app = document.getElementById("app");
+
+const state = {
+  level: -1,
+  puzzle: [],
+  selectedPiece: null,
+  potions: [],
+  potionOrder: [],
+  potionSolved: false
+};
+
+/* ---------- GŁÓWNA NAWIGACJA ---------- */
+
+function startGame(){
+  state.level = 0;
+  renderLevel();
+}
+
+function nextLevel(){
+  state.level++;
+  if(state.level >= 6){
+    renderGift();
+  }else{
+    renderLevel();
+  }
+}
+
+function showMessage(text, good){
+  const box = document.getElementById("message");
+  if(!box) return;
+  box.textContent = text;
+  box.className = "message " + (good ? "ok" : "bad");
+}
+
+function progressHTML(){
+  let html = '<div class="progress">';
+  for(let i=0;i<6;i++){
+    html += '<div class="dot ' + (i <= state.level ? 'active':'') + '"></div>';
+  }
+  return html + '</div>';
+}
+
+function shell(chapter,title,content){
+  app.innerHTML = `
+    <div class="logo">CLASSIFIED // BIRTHDAY PROTOCOL</div>
+    <div class="panel">
+      <div class="chapter">${chapter}</div>
+      <h2>${title}</h2>
+      ${content}
+      ${progressHTML()}
+    </div>`;
+}
+
+/* ---------- START ---------- */
+
+function renderStart(){
+  app.innerHTML = `
+    <div class="logo">CLASSIFIED // BIRTHDAY PROTOCOL</div>
+    <div class="hero">
+      <h1>THE LAST RITUAL</h1>
+      <div class="subtitle">SIX DOORS · ONE SECRET</div>
+    </div>
+    <div class="panel">
+      <div class="chapter">PROLOGUE</div>
+      <h2>Nie powinieneś tu być.</h2>
+      <p>Ta strona nie powstała po to, żebyś ją po prostu obejrzał.</p>
+      <p>Przed Tobą sześć prób. Każda prowadzi Cię bliżej tego, co czeka za ostatnimi drzwiami.</p>
+      <p>Niektóre odpowiedzi będą oczywiste. Niektóre nie.</p>
+      <button class="action" id="startButton">ENTER THE RITUAL</button>
+    </div>`;
+
+  document.getElementById("startButton").addEventListener("click", startGame);
+}
+
+/* ---------- POZIOMY ---------- */
+
+function renderLevel(){
+  const n = state.level;
+
+  if(n===0) renderRiddle();
+  if(n===1) renderSortPotions();
+  if(n===2) renderPuzzle();
+  if(n===3) renderPotions();
+  if(n===4) renderCode();
+  if(n===5) renderKnives();
+}
+
+/* 1. ZAGADKA */
+
+function renderRiddle(){
+  shell("DOOR 01 / 06","THE RIDDLE",`
+    <div class="riddle">
+      Mam miasta, ale nie mam domów.<br>
+      Mam góry, ale nie mam drzew.<br>
+      Mam wodę, ale nie mam ryb.<br><br>
+      <strong>Czym jestem?</strong>
+    </div>
+    <input class="text-input" id="answer" placeholder="Wpisz odpowiedź..." autocomplete="off">
+    <button class="action" id="unlock">UNLOCK</button>
+    <div id="message" class="message"></div>
+    <button class="action hint" id="hint">USE HINT</button>
+  `);
+
+  const answer = document.getElementById("answer");
+
+  function check(){
+    if(answer.value.trim().toLowerCase()==="mapa"){
+      showMessage("ACCESS GRANTED.",true);
+      setTimeout(nextLevel,600);
+    }else{
+      showMessage("Nie. Zamek pozostaje zamknięty.",false);
+      document.getElementById("hint").style.display="block";
+    }
+  }
+
+  document.getElementById("unlock").addEventListener("click",check);
+  answer.addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+  document.getElementById("hint").addEventListener("click",()=>{
+    showMessage("HINT: Możesz na niej znaleźć Barcelonę.",false);
+  });
+}
+
+/* 2. SUWAKI */
+
+function renderSortPotions(){
+  shell("DOOR 02 / 06","THE ALCHEMIST",`
+    <div class="riddle">
+      Mikstury zostały wymieszane.<br><br>
+      <strong>Posegreguj każdy kolor do osobnej fiolki.</strong><br><br>
+      Możesz przelewać ciecz tylko do pustej fiolki
+      albo na ciecz tego samego koloru.
+    </div>
+
+    <div class="sort-room">
+      <div class="sort-scene" id="sortScene"></div>
+      <div class="sort-instruction">WYBIERZ FIOLEKĘ → WYBIERZ FIOLEKĘ DOCELOWĄ</div>
+    </div>
+
+    <button class="action" id="resetSort">RESET</button>
+    <button class="action" id="unlockSort">UNLOCK</button>
+    <div id="message" class="message"></div>
+    <button class="action hint" id="sortHint">USE HINT</button>
+  `);
+
+  initSortPotions();
+
+  document.getElementById("resetSort").addEventListener("click",initSortPotions);
+  document.getElementById("unlockSort").addEventListener("click",checkSortSolved);
+  document.getElementById("sortHint").addEventListener("click",function(){
+    showMessage("HINT: Przelewaj cały widoczny blok tego samego koloru, gdy tylko masz taką możliwość.",false);
+  });
+}
+
+let sortState=[];
+let sortSelected=null;
+
+const sortStart=[
+  ["red","blue","green","violet"],
+  ["green","red","violet","blue"],
+  ["blue","violet","red","green"],
+  ["violet","green","blue","red"],
+  [],
+  []
+];
+
+const sortColors={
+  red:"linear-gradient(#8e2028,#300509)",
+  blue:"linear-gradient(#263f55,#091923)",
+  green:"linear-gradient(#304d38,#0b2114)",
+  violet:"linear-gradient(#53345d,#1b0c25)"
+};
+
+function initSortPotions(){
+  sortState=sortStart.map(b=>b.slice());
+  sortSelected=null;
+  drawSortPotions();
+  const msg=document.getElementById("message");
+  if(msg)msg.textContent="";
+}
+
+function drawSortPotions(){
+  const scene=document.getElementById("sortScene");
+  if(!scene)return;
+  scene.innerHTML="";
+
+  sortState.forEach((bottle,index)=>{
+    const el=document.createElement("div");
+    el.className="sort-bottle"+(bottle.length===0?" sort-empty":"")+
+      (sortSelected===index?" selected":"");
+
+    bottle.forEach((color,layer)=>{
+      const liquid=document.createElement("div");
+      liquid.className="sort-liquid";
+      liquid.style.bottom=(layer*25)+"%";
+      liquid.style.background=sortColors[color];
+      el.appendChild(liquid);
+    });
+
+    el.addEventListener("click",()=>sortClick(index));
+    scene.appendChild(el);
+  });
+}
+
+function sortClick(index){
+  if(sortSelected===null){
+    if(sortState[index].length===0)return;
+    sortSelected=index;
+    drawSortPotions();
+    return;
+  }
+
+  if(sortSelected===index){
+    sortSelected=null;
+    drawSortPotions();
+    return;
+  }
+
+  const from=sortSelected;
+  const to=index;
+  const source=sortState[from];
+  const target=sortState[to];
+
+  if(source.length===0 || target.length===4){
+    sortSelected=null;
+    drawSortPotions();
+    return;
+  }
+
+  const color=source[source.length-1];
+  if(target.length>0 && target[target.length-1]!==color){
+    showMessage("Nie możesz połączyć tych kolorów.",false);
+    sortSelected=null;
+    drawSortPotions();
+    return;
+  }
+
+  let count=1;
+  while(count<source.length && source[source.length-1-count]===color)count++;
+
+  const amount=Math.min(count,4-target.length);
+  for(let i=0;i<amount;i++)target.push(source.pop());
+
+  sortSelected=null;
+  drawSortPotions();
+}
+
+function checkSortSolved(){
+  const solved=sortState.every(bottle=>
+    bottle.length===0 ||
+    (bottle.length===4 && bottle.every(c=>c===bottle[0]))
+  );
+
+  if(solved){
+    showMessage("THE MIXTURES HAVE BEEN SEPARATED.",true);
+    setTimeout(nextLevel,700);
+  }else{
+    showMessage("Jeszcze nie. Każdy kolor musi trafić do własnej fiolki.",false);
+    document.getElementById("sortHint").style.display="block";
+  }
+}
+
+/* 3. PUZZLE */
+
+const puzzleSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="300" height="300" fill="#080808"/>
+<circle cx="150" cy="150" r="105" fill="none" stroke="#a52222" stroke-width="5"/>
+<path d="M150 45 L174 118 L250 118 L188 163 L212 238 L150 192 L88 238 L112 163 L50 118 L126 118 Z"
+fill="none" stroke="#ddd" stroke-width="5"/>
+<circle cx="150" cy="150" r="20" fill="#a52222"/>
+<path d="M150 20V280M20 150H280" stroke="#333" stroke-width="2"/>
+</svg>`;
+
+const puzzleImage =
+  "url('data:image/svg+xml;charset=UTF-8,"+
+  encodeURIComponent(puzzleSVG)+"')";
+
+function renderPuzzle(){
+  shell("DOOR 03 / 06","THE SHATTERED IMAGE",`
+    <div class="riddle">
+      Obraz został rozbity na dziewięć fragmentów.<br>
+      <strong>Ułóż go z powrotem.</strong><br><br>
+      Kliknij dwa kafelki, żeby zamienić je miejscami.
+    </div>
+    <div class="puzzle" id="puzzle"></div>
+    <button class="action" id="resetPuzzle">RESET PUZZLE</button>
+    <button class="action" id="unlock">UNLOCK</button>
+    <div id="message" class="message"></div>
+  `);
+
+  initPuzzle();
+
+  document.getElementById("resetPuzzle").addEventListener("click",initPuzzle);
+  document.getElementById("unlock").addEventListener("click",()=>{
+    const solved = state.puzzle.every((v,i)=>v===i);
+    if(solved){
+      showMessage("THE IMAGE IS WHOLE.",true);
+      setTimeout(nextLevel,600);
+    }else{
+      showMessage("Obraz nadal jest niekompletny.",false);
+    }
+  });
+}
+
+function initPuzzle(){
+  state.puzzle = [0,3,6,1,4,7,2,5,8];
+  state.selectedPiece = null;
+  drawPuzzle();
+}
+
+function drawPuzzle(){
+  const board=document.getElementById("puzzle");
+  if(!board)return;
+  board.innerHTML="";
+
+  state.puzzle.forEach((piece,position)=>{
+    const tile=document.createElement("div");
+    tile.className="piece";
+
+    const x=piece%3;
+    const y=Math.floor(piece/3);
+
+    tile.style.backgroundImage=puzzleImage;
+    tile.style.backgroundPosition=(x*50)+"% "+(y*50)+"%";
+
+    if(state.selectedPiece===position){
+      tile.classList.add("selected");
+    }
+
+    tile.addEventListener("click",()=>selectPiece(position));
+    board.appendChild(tile);
+  });
+}
+
+function selectPiece(position){
+  if(state.selectedPiece===null){
+    state.selectedPiece=position;
+    drawPuzzle();
+    return;
+  }
+
+  if(state.selectedPiece===position){
+    state.selectedPiece=null;
+    drawPuzzle();
+    return;
+  }
+
+  const a=state.selectedPiece;
+  const b=position;
+
+  [state.puzzle[a],state.puzzle[b]]=[state.puzzle[b],state.puzzle[a]];
+  state.selectedPiece=null;
+  drawPuzzle();
+}
+
+/* 4. MIKSTURY */
+
+const potionLevels=[31,59,43,54,37,48];
+
+function renderPotions(){
+  shell("DOOR 04 / 06","THE POTIONS",`
+    <div class="riddle">
+      Sześć mikstur. Jedna kolejność.<br><br>
+      <strong>Ułóż je od najmniejszej ilości płynu do największej.</strong><br><br>
+      <span style="color:#777">Nie ufaj kolorom. Patrz na poziom cieczy.</span>
+    </div>
+
+    <div class="potions" id="potions"></div>
+    <div class="order" id="order"></div>
+
+    <button class="action" id="resetPotions">RESET</button>
+    <button class="action" id="unlock">UNLOCK</button>
+    <div id="message" class="message"></div>
+  `);
+
+  initPotions();
+
+  document.getElementById("resetPotions").addEventListener("click",initPotions);
+  document.getElementById("unlock").addEventListener("click",()=>{
+    if(state.potionOrder.length!==6){
+      showMessage("Najpierw wybierz wszystkie sześć mikstur.",false);
+      return;
+    }
+
+    const values=state.potionOrder.map(i=>potionLevels[i]);
+    const ok=values.every((v,i)=>i===0 || values[i-1]<v);
+
+    if(ok){
+      showMessage("THE POTIONS HAVE BEEN ORDERED.",true);
+      setTimeout(nextLevel,600);
+    }else{
+      showMessage("Mikstury reagują... kolejność jest błędna.",false);
+    }
+  });
+}
+
+function initPotions(){
+  state.potionOrder=[];
+  const box=document.getElementById("potions");
+  const order=document.getElementById("order");
+  if(!box)return;
+
+  box.innerHTML="";
+  order.innerHTML="";
+
+  const mixedOrder=[3,0,5,2,4,1];
+  mixedOrder.forEach((index)=>{
+    const level=potionLevels[index];
+    const p=document.createElement("div");
+    p.className="potion";
+
+    p.innerHTML=`
+      <div class="cap"></div>
+      <div class="neck"></div>
+      <div class="bottle"></div>
+      <div class="liquid" style="height:${Math.round(level*1.28)}px"></div>
+      <div class="label"></div>
+    `;
+
+    p.addEventListener("click",()=>choosePotion(index,p));
+    box.appendChild(p);
+  });
+}
+
+function choosePotion(index,element){
+  if(state.potionOrder.includes(index))return;
+
+  state.potionOrder.push(index);
+  element.classList.add("selected");
+
+  const order=document.getElementById("order");
+  const tag=document.createElement("span");
+  tag.textContent="◆";
+  order.appendChild(tag);
+}
+
+/* 5. SZYFR */
+
+function renderCode(){
+  shell("DOOR 05 / 06","THE CODE",`
+    <div class="riddle">
+      Każda litera została przesunięta o <strong>3 miejsca</strong>.<br><br>
+      <strong style="font-size:28px;letter-spacing:5px">ORUQD VKRUH</strong><br><br>
+      Odszyfruj wiadomość.
+    </div>
+    <input class="text-input" id="answer" placeholder="Wpisz odszyfrowane słowo..." autocomplete="off">
+    <button class="action" id="unlock">UNLOCK</button>
+    <div id="message" class="message"></div>
+    <button class="action hint" id="hint">USE HINT</button>
+  `);
+
+  const answer=document.getElementById("answer");
+
+  function check(){
+    if(answer.value.trim().toLowerCase().replace(/\s+/g,"")==="lornashore"){
+      showMessage("CODE ACCEPTED.",true);
+      setTimeout(nextLevel,600);
+    }else{
+      showMessage("To nie jest właściwe słowo.",false);
+      document.getElementById("hint").style.display="block";
+    }
+  }
+
+  document.getElementById("unlock").addEventListener("click",check);
+  answer.addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+  document.getElementById("hint").addEventListener("click",function(){
+    showMessage("HINT: Cofnij każdą literę o trzy miejsca.",false);
+  });
+}
+
+/* 6. RZUTY DO TARCZY */
+
+let knifeScore=0;
+let knifeThrows=0;
+
+function renderKnives(){
+  knifeScore=0;
+  knifeThrows=0;
+
+  shell("DOOR 06 / 06","THE THROW",`
+    <div class="riddle">
+      Przed Tobą ostatnia próba.<br><br>
+      <strong>Traf w odpowiednie pola tarczy.</strong><br><br>
+      Masz sześć rzutów. Zdobądź dokładnie <strong>30 punktów</strong>.
+    </div>
+
+    <div class="target-wrap">
+      <div class="target" id="target"></div>
+    </div>
+
+    <div class="target-score"><strong id="score">0</strong> / 30</div>
+    <div class="throw-info" id="throws">RZUTY: 0 / 6</div>
+
+    <button class="action" id="resetThrows">RESET</button>
+    <button class="action" id="unlock">OPEN THE FINAL DOOR</button>
+    <div id="message" class="message"></div>
+    <button class="action hint" id="hint">USE HINT</button>
+  `);
+
+  const target=document.getElementById("target");
+
+  target.addEventListener("click",function(event){
+    if(knifeThrows>=6)return;
+
+    const rect=target.getBoundingClientRect();
+    const x=event.clientX-rect.left;
+    const y=event.clientY-rect.top;
+    const cx=rect.width/2;
+    const cy=rect.height/2;
+    const distance=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
+    const radius=rect.width/2;
+
+    let points=0;
+    if(distance<=radius*.10) points=10;
+    else if(distance<=radius*.24) points=7;
+    else if(distance<=radius*.43) points=5;
+    else if(distance<=radius*.64) points=3;
+
+    knifeThrows++;
+    knifeScore+=points;
+
+    const knife=document.createElement("div");
+    knife.className="throw-knife";
+    knife.style.left=x+"px";
+    knife.style.top=y+"px";
+    target.appendChild(knife);
+
+    document.getElementById("score").textContent=knifeScore;
+    document.getElementById("throws").textContent="RZUTY: "+knifeThrows+" / 6";
+
+    if(knifeThrows===6){
+      if(knifeScore===30){
+        showMessage("PERFECT SCORE. FINAL DOOR UNLOCKED.",true);
+      }else{
+        showMessage("Wynik: "+knifeScore+". Potrzebujesz dokładnie 30 punktów.",false);
+      }
+    }
+  });
+
+  document.getElementById("resetThrows").addEventListener("click",renderKnives);
+
+  document.getElementById("unlock").addEventListener("click",function(){
+    if(knifeThrows===6 && knifeScore===30){
+      showMessage("FINAL DOOR UNLOCKED.",true);
+      setTimeout(renderGift,700);
+    }else if(knifeThrows<6){
+      showMessage("Najpierw wykonaj wszystkie sześć rzutów.",false);
+      document.getElementById("hint").style.display="block";
+    }else{
+      showMessage("Wynik musi wynosić dokładnie 30 punktów.",false);
+      document.getElementById("hint").style.display="block";
+    }
+  });
+
+  document.getElementById("hint").addEventListener("click",function(){
+    showMessage("HINT: Celuj tak, aby suma sześciu rzutów wyniosła dokładnie 30.",false);
+  });
+}
+
+/* ---------- PREZENT ---------- */
+
+function renderGift(){
+  app.innerHTML=`
+    <div class="logo">CLASSIFIED // BIRTHDAY PROTOCOL</div>
+    <div class="panel final">
+      <div class="chapter">DOOR 07 / THE GIFT</div>
+      <h2>YOU MADE IT.</h2>
+
+      <p>Sześć drzwi. Sześć zagadek.</p>
+      <p>Teraz zaczyna się właściwa część.</p>
+
+      <div class="reward">
+        <div class="reward-title">THE FINAL REWARD</div>
+        <div class="voucher-final">
+          <img src="voucher.png" alt="Voucher na tatuaż">
+        </div>
+        <div class="voucher-caption">ONE LAST SECRET — YOUR GIFT AWAITS</div>
+      </div>
+
+      <div class="small">QUEST COMPLETE // HAPPY BIRTHDAY</div>
+    </div>`;
+}
+
+/* START */
+renderStart();
+</script>
+</body>
+</html>
